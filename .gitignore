@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+
+.venv/
+venv/
+.env
+
+# Raw survey data and generated artifacts are intentionally kept out of Git.
+data/
+data_proc/
+data_proc_new/
+report_render/
+
+*.ASC
+*.dat
+*.csv
+*.json
+*.png
+*.jpg
+*.jpeg
+*.docx
+*.xlsx
