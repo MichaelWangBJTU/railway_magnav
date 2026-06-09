@@ -1,35 +1,27 @@
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
-import process_railway_magnav as prm
+from process_railway_magnav import (
+    DATASETS,
+    build_span_segments,
+    prepare_global_span_geometry,
+    read_dataset_mag,
+)
 
 
-PROJECT_ROOT = Path.home() / "Desktop" / "磁导航" / "数据" / "codex_railway_magnav"
-OUT_DIR = PROJECT_ROOT / "data_proc_new"
+OUT_DIR = Path(r"C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data_proc_new")
 
 
 def main() -> None:
-    global OUT_DIR
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data-root", type=Path, default=prm.BASE, help="directory that contains the raw SPAN and mag folders")
-    parser.add_argument("--proc-dir", type=Path, default=OUT_DIR, help="directory containing processed map CSV files")
-    parser.add_argument("--leap-seconds", type=int, default=prm.GPS_UTC_LEAP_SECONDS)
-    args = parser.parse_args()
-
-    prm.BASE = args.data_root
-    prm.DATASETS = prm.build_datasets(prm.BASE)
-    OUT_DIR = args.proc_dir
-
-    prepared, *_ = prm.prepare_global_span_geometry(args.leap_seconds)
+    prepared, *_ = prepare_global_span_geometry(0)
     span_files = prepared["5.13"]
-    segments = prm.build_span_segments(span_files)
-    mag = prm.read_dataset_mag(prm.DATASETS["5.13"])
+    segments = build_span_segments(span_files)
+    mag = read_dataset_mag(DATASETS["5.13"])
 
     rows = []
     for sf in span_files:

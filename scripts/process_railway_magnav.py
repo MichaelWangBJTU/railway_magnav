@@ -11,27 +11,21 @@ import numpy as np
 import pandas as pd
 
 
-PROJECT_ROOT = Path.home() / "Desktop" / "磁导航" / "数据" / "codex_railway_magnav"
-BASE = PROJECT_ROOT / "data"
-OUT_DIR = PROJECT_ROOT / "data_proc_new"
+BASE = Path(r"C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data")
+OUT_DIR = Path(r"C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data_proc")
 
-
-def build_datasets(data_root: Path) -> dict[str, dict]:
-    return {
-        "4.14": {
-            "survey_date": datetime(2026, 4, 13),
-            "span_dir": data_root / "SPAN4.14",
-            "mag_dir": data_root / "mag4.14",
-        },
-        "5.13": {
-            "survey_date": datetime(2026, 5, 13),
-            "span_dir": data_root / "SPAN5.13",
-            "mag_dir": data_root / "mag5.13",
-        },
-    }
-
-
-DATASETS = build_datasets(BASE)
+DATASETS = {
+    "4.14": {
+        "survey_date": datetime(2026, 4, 13),
+        "span_dir": BASE / "SPAN4.14",
+        "mag_dir": BASE / "mag4.14",
+    },
+    "5.13": {
+        "survey_date": datetime(2026, 5, 13),
+        "span_dir": BASE / "SPAN5.13",
+        "mag_dir": BASE / "mag5.13",
+    },
+}
 
 EARTH_R = 6378137.0
 GPS_UTC_LEAP_SECONDS = 0
@@ -614,16 +608,13 @@ def process_dataset(
 
 
 def main() -> None:
-    global BASE, DATASETS, OUT_DIR
+    global OUT_DIR
     parser = argparse.ArgumentParser()
-    parser.add_argument("--write", action="store_true", help="write CSV outputs")
+    parser.add_argument("--write", action="store_true", help="write CSV outputs to data_proc")
     parser.add_argument("--leap-seconds", type=int, default=GPS_UTC_LEAP_SECONDS)
     parser.add_argument("--per-dataset-axis", action="store_true", help="fit a separate rail axis for each date")
-    parser.add_argument("--data-root", type=Path, default=BASE, help="directory that contains SPAN4.14, SPAN5.13, mag4.14, and mag5.13")
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
     args = parser.parse_args()
-    BASE = args.data_root
-    DATASETS = build_datasets(BASE)
     OUT_DIR = args.out_dir
     if args.per_dataset_axis:
         reports = [process_dataset(name, info, args.write, args.leap_seconds) for name, info in DATASETS.items()]

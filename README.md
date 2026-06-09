@@ -1,32 +1,53 @@
 # Railway MagNav
 
-铁路地磁导航数据处理与初步匹配验证代码。当前版本保留了良陈铁路小车实验中已经完成的流程：SPAN 位置数据与磁强计数据时间对齐、沿轨道方向 0.5 m 建图、往返方向处理、跨日期磁图相似度分析、滑窗 NCC 初步匹配验证，以及阶段性 Word 报告生成。
+铁路地磁导航数据处理、建图、匹配验证和阶段性研究代码。
 
-## 数据目录
+本仓库保存良陈铁路约 700 m 小车实验的主要处理流程和研究实验脚本。当前数据流程以 `4.14` 采集日作为参考磁图，以 `5.13` 采集日作为跨日查询验证，重点研究无轮速计条件下的铁路一维地磁地图匹配。
 
-默认数据目录为：
+## 当前研究状态
+
+已经实现并记录的主要内容：
+
+- SPAN/GPGGA 与磁强计数据时间对齐；
+- GNSS 坐标投影到沿轨一维距离 `s`；
+- 0.5 m 间隔铁路磁图构建；
+- 往返方向、车体系三轴磁场、总场磁场的预处理；
+- 跨日磁图相似度分析；
+- 滑窗 NCC/MSD、DTW、HMM/Viterbi、弱 IMU 进度约束、多候选选择等 baseline 和改进方法；
+- 当前最优的 `ProgressMarginSelector` 实验；
+- 固定滞后 HMM、弱里程、端点先验、方向切换、鲁棒候选打分等负结果实验；
+- 文献对标、SOTA 分析和导师汇报材料。
+
+当前最优离线/延迟候选选择结果：
+
+| 方法 | 评价集 | 中位误差 | 均值误差 | RMSE | 平均终点误差 |
+|---|---|---:|---:|---:|---:|
+| ProgressMarginSelector | 5.13 对 4.14，原始全段 | 13.8 m | 25.2 m | 40.1 m | 24.6 m |
+| ProgressMarginSelector | 单程单调区段 | 13.8 m | 24.3 m | 39.0 m | 16.7 m |
+| FixedTotal HMM baseline | 5.13 对 4.14，原始全段 | 24.6 m | 46.0 m | 51.2 m | 50.6 m |
+
+这些结果说明铁路磁特征具有跨日可重复性，但目前还不能宣称达到铁路磁定位 SOTA。当前主要差距在数据规模、里程/速度约束、实时性、重复磁特征歧义和多日泛化验证。
+
+## 仓库结构
 
 ```text
-C:\Users\<用户名>\Desktop\磁导航\数据\codex_railway_magnav
+scripts/
+  数据处理、建图、baseline、HMM/PF 风格实验、报告生成脚本
+
+docs/research_trace/
+  阶段性研究记录、文献矩阵、投稿策略和方法记录
+
+docs/results/
+  精选小体量结果 CSV/JSON，用于复查关键指标和图中数据
+
+docs/figures/
+  精选图表：当前最佳方法、轨迹图、SOTA 对比图等
+
+docs/reports/
+  导师汇报材料的 Markdown 版本
 ```
 
-脚本默认读取：
-
-```text
-data/
-  SPAN4.14/
-  SPAN5.13/
-  mag4.14/
-  mag5.13/
-```
-
-默认输出到：
-
-```text
-data_proc_new/
-```
-
-原始数据、CSV、图片、Word 报告等产物不提交到 GitHub，只保留处理代码和说明文档。
+原始 SPAN、磁强计数据、大型对齐样本、完整生成产物不提交到 GitHub。
 
 ## 安装依赖
 
@@ -36,9 +57,15 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## 处理流程
+## 常用流程
 
-1. 建立 0.5 m 间隔磁图，并输出每趟对齐数据。
+默认本地数据目录：
+
+```text
+C:\Users\<user>\Desktop\磁导航\数据\codex_railway_magnav
+```
+
+### 1. 数据对齐与 0.5 m 建图
 
 ```powershell
 python scripts\process_railway_magnav.py --write `
@@ -46,50 +73,57 @@ python scripts\process_railway_magnav.py --write `
   --out-dir "C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data_proc_new"
 ```
 
-2. 融合 4.14 和 5.13 磁图，计算相似度并画图。
+### 2. 跨日磁图分析
 
 ```powershell
 python scripts\analyze_magnetic_maps.py `
   --proc-dir "C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data_proc_new"
 ```
 
-3. 用 4.14 融合 total 磁图作为参考，验证 5.13 total 曲线滑窗匹配。
+### 3. 滑窗 NCC baseline
 
 ```powershell
 python scripts\validate_magnetic_matching.py `
   --proc-dir "C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data_proc_new"
 ```
 
-4. 诊断 5.13 原始 SPAN 与磁强计时间覆盖关系。
+### 4. 当前最佳候选选择方法
 
 ```powershell
-python scripts\diagnose_5_13_coverage.py `
-  --data-root "C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data" `
-  --proc-dir "C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data_proc_new"
+python scripts\progress_margin_selector_experiment.py
 ```
 
-5. 生成阶段性汇报 Word 文档。
+输出的关键文件：
 
-```powershell
-python scripts\build_stage_report_docx.py `
-  --proc-dir "C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data_proc_new"
-```
+- `docs/results/progress_margin_selector_summary.csv`
+- `docs/results/progress_margin_selector_results.csv`
+- `docs/results/progress_margin_selector_decisions.csv`
+- `docs/results/progress_margin_selector_selected_trajectories.csv`
 
-## 当前方法要点
+## 当前最佳方法简述
 
-- SPAN 的 GPGGA 时间字段按 NovAtel/Hexagon OEM7 文档作为 UTC 处理，再加 8 小时转北京时间；默认不减闰秒。
-- 4.14 和 5.13 共享同一条 PCA 拟合轨道轴和同一个物理 0 点。
-- 每个地图点包含轨道距离、拟合坐标、插值 SPAN 坐标、各趟磁场数据，以及融合统计量。
-- 往返方向会改变车体系三轴方向，因此对三轴分量先做每趟车体系中位数去偏置，再旋转到统一轨道坐标系，输出 `*_track_anom` 异常特征。
-- 融合磁图默认使用每个距离点多趟观测的稳健中位数，同时保留均值、标准差和 MAD。
-- 初步匹配 baseline 使用 total 场滑窗归一化互相关 NCC。
+`ProgressMarginSelector` 的核心思想是：先生成多条可能的沿轨位置轨迹，再用弱 IMU 进度和 Viterbi 匹配置信度选择最可信的一条。
 
-## 主要脚本
+1. 用 4.14 构建参考磁图，主特征使用总场高通值；
+2. 对 5.13 每个查询段运行 HMM/Viterbi；
+3. 用 `vmax = 1.0 / 1.2 / 1.4 m/s` 生成多条总场候选；
+4. 额外生成一条轴校准候选；
+5. 比较候选轨迹总进度与 INSPVAX 积分粗进度；
+6. 在进度一致性较好的候选中，再根据 Viterbi final score margin 选择；
+7. 只有当轴候选匹配置信度和进度一致性都明显优于总场候选时才切换到轴候选；
+8. SPAN/GPGGA 真值只用于最终评价，不参与候选选择。
 
-- `scripts/process_railway_magnav.py`：读取 SPAN GPGGA 和磁强计数据，完成时间对齐、轨道坐标拟合、方向处理和 0.5 m 建图。
-- `scripts/analyze_magnetic_maps.py`：生成融合磁图、跨日期对比图、归一化对比图和相似度指标。
-- `scripts/validate_magnetic_matching.py`：用 5.13 片段匹配 4.14 磁图，输出 NCC 匹配误差统计和示例图。
-- `scripts/diagnose_5_13_coverage.py`：检查 5.13 SPAN 文件与磁强计文件的时间覆盖，解释宽表中空值来源。
-- `scripts/build_stage_report_docx.py`：把关键表格和图片写入阶段性 Word 汇报。
+## 主要参考文献
 
-下一步计划是在现有 baseline 上复现铁路磁图 Graph SLAM：用局部磁图和磁签名相关性生成 loop closure，再通过一维 pose graph 优化约束里程漂移。
+主参考 baseline：
+
+- Siebler, Heirich, Sand, *Train Localization with Particle Filter and Magnetic Field Measurements*, FUSION 2018. https://elib.dlr.de/119898/1/FUSION_2018.pdf
+
+强 SOTA 对标：
+
+- Siebler et al., *Magnetic Field Mapping of Railway Lines with Graph SLAM*, FUSION 2024. https://isas.iar.kit.edu/pdf/FUSION24_Siebler.pdf
+- Dieckow et al., *Real-time rail vehicle localisation using spatially resolved magnetic field measurements*, arXiv 2025. https://arxiv.org/abs/2507.19327
+
+## 注意
+
+当前仓库中的脚本以研究复现和阶段性实验为主，部分路径仍然保留本机数据目录或实验输出目录。后续若要整理成可发布软件包，需要进一步参数化数据路径、抽象公共模块、统一配置文件，并补充测试数据。

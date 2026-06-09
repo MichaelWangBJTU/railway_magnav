@@ -12,8 +12,7 @@ import numpy as np
 import pandas as pd
 
 
-PROJECT_ROOT = Path.home() / "Desktop" / "磁导航" / "数据" / "codex_railway_magnav"
-PROC_DIR = PROJECT_ROOT / "data_proc_new"
+PROC_DIR = Path(r"C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data_proc")
 GRID_STEP_M = 0.5
 SMOOTH_WINDOW_M = 5.0
 MIN_OVERLAP_M = 80.0

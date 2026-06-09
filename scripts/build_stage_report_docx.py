@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import json
 from datetime import datetime
 from pathlib import Path
@@ -15,10 +14,8 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 
-PROJECT_ROOT = Path.home() / "Desktop" / "磁导航" / "数据" / "codex_railway_magnav"
-PROC_DIR = PROJECT_ROOT / "data_proc_new"
-DEFAULT_DOCX_NAME = "铁路地磁导航数据处理阶段性汇报.docx"
-OUT_DOCX = PROC_DIR / DEFAULT_DOCX_NAME
+PROC_DIR = Path(r"C:\Users\m1352\Desktop\磁导航\数据\codex_railway_magnav\data_proc_new")
+OUT_DOCX = PROC_DIR / "铁路地磁导航数据处理阶段性汇报.docx"
 
 
 def set_cell_shading(cell, fill: str) -> None:
@@ -191,14 +188,6 @@ def add_dataframe_table(doc: Document, df: pd.DataFrame, columns: list[str], hea
 
 
 def main() -> None:
-    global PROC_DIR, OUT_DOCX
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--proc-dir", type=Path, default=PROC_DIR, help="directory containing processed CSV and PNG outputs")
-    parser.add_argument("--out-docx", type=Path, default=None, help="optional output DOCX path")
-    args = parser.parse_args()
-    PROC_DIR = args.proc_dir
-    OUT_DOCX = args.out_docx if args.out_docx is not None else PROC_DIR / DEFAULT_DOCX_NAME
-
     doc = Document()
     configure_styles(doc)
     add_title(doc)
@@ -385,7 +374,6 @@ def main() -> None:
         ],
     )
 
-    OUT_DOCX.parent.mkdir(parents=True, exist_ok=True)
     doc.save(OUT_DOCX)
     print(OUT_DOCX)
 

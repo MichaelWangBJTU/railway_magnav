@@ -20,3 +20,11 @@ report_render/
 *.jpeg
 *.docx
 *.xlsx
+
+# Curated small research outputs kept for reproducibility.
+!docs/results/
+!docs/results/**
+!docs/figures/
+!docs/figures/**
+!docs/reports/
+!docs/reports/**
